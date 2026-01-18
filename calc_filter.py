@@ -97,10 +97,14 @@ def process_input(line):
 			start = time.time()
 			nub_dist, nub_params = refit_dist(nub_times, prev_nub_params)
 			timings['nub_fit_ms'] = (time.time() - start) * 1000
-		else:
+		elif len(nub_times) > 0:
 			nub_dist, nub_params = None, (0,0,0,0,0)
 			timings['nub_fit_ms'] = 0
-		
+		else:
+			error = {"error": f"No overall records found for filter ID {filter_id}."}
+			sys.stderr.write(json.dumps(error) + '\n')
+			return
+	
 		# Compute nub fractions
 		start = time.time()
 		nub_times_array = np.array(nub_times)
@@ -120,18 +124,24 @@ def process_input(line):
 			start = time.time()
 			pro_dist, pro_params = refit_dist(pro_times, prev_pro_params)
 			timings['pro_fit_ms'] = (time.time() - start) * 1000
-		else:
+		elif len(pro_times) > 0:
 			pro_dist, pro_params = None, (0,0,0,0,0)
 			timings['pro_fit_ms'] = 0
-		
-		# Compute pro fractions
-		start = time.time()
-		pro_times_array = np.array(pro_times)
-		new_fractions = np.maximum(common.get_dist_points_portion(pro_times_array, pro_times[0], pro_dist, pro_tier, pro_params[4], len(pro_times)),
-							common.get_dist_points_portion(pro_times_array, nub_times[0], nub_dist, nub_tier, nub_params[4], len(nub_times)))
-		pro_records = [(record_id, time, fraction) for (record_id, time, _), fraction in zip(pro_records, new_fractions)]
-		timings['pro_compute_ms'] = (time.time() - start) * 1000
-		
+		else:
+			# No pro records - just skip
+			timings['pro_fit_ms'] = 0
+
+		# Compute pro fractions if there are any pro records
+		if len(pro_times) > 0:
+			start = time.time()
+			pro_times_array = np.array(pro_times)
+			new_fractions = np.maximum(common.get_dist_points_portion(pro_times_array, pro_times[0], pro_dist, pro_tier, pro_params[4], len(pro_times)),
+								common.get_dist_points_portion(pro_times_array, nub_times[0], nub_dist, nub_tier, nub_params[4], len(nub_times)))
+			pro_records = [(record_id, time, fraction) for (record_id, time, _), fraction in zip(pro_records, new_fractions)]
+			timings['pro_compute_ms'] = (time.time() - start) * 1000
+		else:
+			timings['pro_compute_ms'] = 0
+
 		# Database write timing
 		start = time.time()
 		if len(nub_records) > 0:
