@@ -5,12 +5,11 @@ import common
 import sys
 """
 Compute nub/pro points fractions based on input data read from stdin.
-Input example: { "time": 8.609375, "nub_data": { "pb_rank": 5, "tier": 1, "wr": 7.6484375, "leaderboard_size": 224, "dist_params": { "a": 33.53900289787477, "b": 33.52140111667502, "loc": 6.3663207368487065, "scale": 0.4480388195262859, "top_scale": 0.9979285278452101 } }, "pro_data": { "pb_rank": 5, "tier": 1, "wr": 7.6484375, "leaderboard_size": 165, "dist_params": { "a": 2.6294814553333743, "b": 2.511121972118702, "loc": 8.713014153227697, "scale": 2.2226724397990805, "top_scale": 0.9952929135343108 }}}
+Input example: { "time": 8.609375, "nub_data": { "tier": 1, "wr": 7.6484375, "leaderboard_size": 224, "dist_params": { "a": 33.53900289787477, "b": 33.52140111667502, "loc": 6.3663207368487065, "scale": 0.4480388195262859, "top_scale": 0.9979285278452101 } }, "pro_data": { "tier": 1, "wr": 7.6484375, "leaderboard_size": 165, "dist_params": { "a": 2.6294814553333743, "b": 2.511121972118702, "loc": 8.713014153227697, "scale": 2.2226724397990805, "top_scale": 0.9952929135343108 }}}
 Beautified input example:
 {
 	"time": 8.609375,
 	"nub_data": {
-		"pb_rank": 5,
 		"tier": 1,
 		"wr": 7.6484375,
 		"leaderboard_size": 224,
@@ -23,7 +22,6 @@ Beautified input example:
 		}
 	}
 	"pro_data": {
-		"pb_rank": 5,
 		"tier": 1,
 		"wr": 7.6484375,
 		"leaderboard_size": 165,
