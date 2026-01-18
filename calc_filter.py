@@ -155,10 +155,20 @@ def process_input(line):
 				[(points, record_id) for record_id, time, points in pro_records]
 			)
 		if len(nub_times) >= 50:
-			cursor.execute("REPLACE INTO PointDistributionData (filter_id, is_pro_leaderboard, a, b, loc, scale, top_scale) VALUES (?, 0, ?, ?, ?, ?, ?)",
+			cursor.execute("""
+					INSERT INTO PointDistributionData (filter_id, is_pro_leaderboard, a, b, loc, scale, top_scale) 
+					VALUES (?, 0, ?, ?, ?, ?, ?)
+					ON DUPLICATE KEY 
+					UPDATE a=VALUES(a), b=VALUES(b), loc=VALUES(loc), scale=VALUES(scale), top_scale=VALUES(top_scale)
+				""",
 				(filter_id, nub_params[0], nub_params[1], nub_params[2], nub_params[3], nub_params[4]))
 		if len(pro_times) >= 50:
-			cursor.execute("REPLACE INTO PointDistributionData (filter_id, is_pro_leaderboard, a, b, loc, scale, top_scale) VALUES (?, 1, ?, ?, ?, ?, ?)",
+			cursor.execute("""
+					INSERT INTO PointDistributionData (filter_id, is_pro_leaderboard, a, b, loc, scale, top_scale) 
+					VALUES (?, 1, ?, ?, ?, ?, ?)
+					ON DUPLICATE KEY 
+					UPDATE a=VALUES(a), b=VALUES(b), loc=VALUES(loc), scale=VALUES(scale), top_scale=VALUES(top_scale)
+				""",
 				(filter_id, pro_params[0], pro_params[1], pro_params[2], pro_params[3], pro_params[4]))
 		conn.commit()
 		timings['db_write_ms'] = (time.time() - start) * 1000
