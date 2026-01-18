@@ -51,6 +51,25 @@ def process_input(line):
 		pro_records: List[Tuple[Any, float, float]] = cursor.fetchall()
 		cursor.execute("SELECT cf.nub_tier, cf.pro_tier FROM CourseFilters cf WHERE cf.id = ?", (filter_id,))
 		filter_row = cursor.fetchone()
+		
+		# Fetch previous distribution parameters for warm start (both nub and pro in one query)
+		cursor.execute(
+		"""
+			SELECT is_pro_leaderboard, a, b, loc, scale 
+			FROM PointDistributionData 
+			WHERE filter_id = ? 
+			ORDER BY is_pro_leaderboard
+		""", (filter_id,))
+		dist_params_rows = cursor.fetchall()
+		
+		prev_nub_params = None
+		prev_pro_params = None
+		for row in dist_params_rows:
+			if row[0] == 0:  # is_pro_leaderboard = 0 (nub)
+				prev_nub_params = (row[1], row[2], row[3], row[4])
+			elif row[0] == 1:  # is_pro_leaderboard = 1 (pro)
+				prev_pro_params = (row[1], row[2], row[3], row[4])
+		
 		timings['db_query_ms'] = (time.time() - start) * 1000
 		
 		if filter_row is None:
@@ -76,7 +95,7 @@ def process_input(line):
 		# Fit nub distribution
 		if len(nub_times) >= 50:
 			start = time.time()
-			nub_dist, nub_params = refit_dist(nub_times)
+			nub_dist, nub_params = refit_dist(nub_times, prev_nub_params)
 			timings['nub_fit_ms'] = (time.time() - start) * 1000
 		else:
 			nub_dist, nub_params = None, (0,0,0,0,0)
@@ -99,7 +118,7 @@ def process_input(line):
 		# Fit pro distribution
 		if len(pro_times) >= 50:
 			start = time.time()
-			pro_dist, pro_params = refit_dist(pro_times)
+			pro_dist, pro_params = refit_dist(pro_times, prev_pro_params)
 			timings['pro_fit_ms'] = (time.time() - start) * 1000
 		else:
 			pro_dist, pro_params = None, (0,0,0,0,0)
@@ -154,8 +173,20 @@ def process_input(line):
 		return
 
 
-def refit_dist(times):
-	norminvgauss_params = stats.norminvgauss.fit(times)
+def refit_dist(times, prev_params=None):
+	if prev_params is not None:
+		# Use previous parameters as initial guess for faster convergence
+		a_init, b_init, loc_init, scale_init = prev_params
+		norminvgauss_params = stats.norminvgauss.fit(
+			times,
+			a_init, b_init,
+			loc=loc_init,
+			scale=scale_init
+		)
+	else:
+		# Cold start - no initial parameters
+		norminvgauss_params = stats.norminvgauss.fit(times)
+	
 	norminvgauss_dist = stats.norminvgauss(*norminvgauss_params)
 	top_scale = norminvgauss_dist.sf(times[0])
 	a, b, loc, scale = norminvgauss_params
