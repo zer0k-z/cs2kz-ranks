@@ -3,6 +3,7 @@ import sys
 import scipy.stats as stats
 import common
 import sys
+import traceback
 """
 Compute nub/pro points fractions based on input data read from stdin.
 Input example: { "time": 8.609375, "nub_data": { "tier": 1, "wr": 7.6484375, "leaderboard_size": 224, "dist_params": { "a": 33.53900289787477, "b": 33.52140111667502, "loc": 6.3663207368487065, "scale": 0.4480388195262859, "top_scale": 0.9979285278452101 } }, "pro_data": { "tier": 1, "wr": 7.6484375, "leaderboard_size": 165, "dist_params": { "a": 2.6294814553333743, "b": 2.511121972118702, "loc": 8.713014153227697, "scale": 2.2226724397990805, "top_scale": 0.9952929135343108 }}}
@@ -57,7 +58,7 @@ def process_input(line):
 			nub_data['tier'],
 			nub_data['dist_params']['top_scale'],
 			nub_data['leaderboard_size'])
-		if 'pro_data' in data:
+		if 'pro_data' in data and data['pro_data'] is not None:
 			# Process pro points
 			pro_data = data['pro_data']
 			pro_dist = stats.norminvgauss(
@@ -87,14 +88,17 @@ def process_input(line):
 	except KeyError as e:
 		error = {"error": f"Missing key in input data: {e}"}
 		sys.stderr.write(json.dumps(error) + '\n')
+		sys.stderr.write(traceback.format_exc() + '\n')
 		return
 	except json.JSONDecodeError as e:
 		error = {"error": f"JSON decode error: {e}"}
 		sys.stderr.write(json.dumps(error) + '\n')
+		sys.stderr.write(traceback.format_exc() + '\n')
 		return
 	except Exception as e:
 		error = {"error": f"An unexpected error occurred: {e}"}
 		sys.stderr.write(json.dumps(error) + '\n')
+		sys.stderr.write(traceback.format_exc() + '\n')
 		return
 
 def main():
