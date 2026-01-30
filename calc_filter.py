@@ -55,7 +55,7 @@ def process_input(line):
 		# Fetch previous distribution parameters for warm start (both nub and pro in one query)
 		cursor.execute(
 		"""
-			SELECT is_pro_leaderboard, a, b, loc, scale 
+			SELECT is_pro_leaderboard, a, b, loc, scale, top_scale
 			FROM PointDistributionData 
 			WHERE filter_id = ? 
 			ORDER BY is_pro_leaderboard
@@ -66,9 +66,9 @@ def process_input(line):
 		prev_pro_params = None
 		for row in dist_params_rows:
 			if row[0] == 0:  # is_pro_leaderboard = 0 (nub)
-				prev_nub_params = (row[1], row[2], row[3], row[4])
+				prev_nub_params = (row[1], row[2], row[3], row[4], row[5])
 			elif row[0] == 1:  # is_pro_leaderboard = 1 (pro)
-				prev_pro_params = (row[1], row[2], row[3], row[4])
+				prev_pro_params = (row[1], row[2], row[3], row[4], row[5])
 		
 		timings['db_query_ms'] = (time.time() - start) * 1000
 		
@@ -196,7 +196,7 @@ def process_input(line):
 def refit_dist(times, prev_params=None):
 	if prev_params is not None:
 		# Use previous parameters as initial guess for faster convergence
-		a_init, b_init, loc_init, scale_init = prev_params
+		a_init, b_init, loc_init, scale_init, _ = prev_params
 		norminvgauss_params = stats.norminvgauss.fit(
 			times,
 			a_init, b_init,
@@ -209,6 +209,11 @@ def refit_dist(times, prev_params=None):
 	
 	norminvgauss_dist = stats.norminvgauss(*norminvgauss_params)
 	top_scale = norminvgauss_dist.sf(times[0])
+	# Sanity safeguard
+	if top_scale <= 0:
+		sys.stderr.write(json.dumps({"warning": "Fitted top_scale <= 0, resetting to 1"}) + '\n')
+		top_scale = 1
+
 	a, b, loc, scale = norminvgauss_params
 	return norminvgauss_dist, (a, b, loc, scale, top_scale)
 

@@ -9,4 +9,4 @@ def get_dist_points_portion(time, wr_time, dist: stats.rv_continuous, tier, top_
 	if total < 50:
 		return get_distribution_points_portion_under_50(time, wr_time, tier)
 	else:
-		return (dist.sf(time)) / top_scale
+		return np.clip(dist.sf(time) / top_scale, 0, 1)
