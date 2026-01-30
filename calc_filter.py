@@ -225,5 +225,7 @@ if __name__ == "__main__":
 	# Read from stdin line by line
 	for line in sys.stdin:
 		process_input(line)
+		sys.stdout.flush()
+		sys.stderr.flush()
 
 	conn.close()

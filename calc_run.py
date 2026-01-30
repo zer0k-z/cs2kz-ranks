@@ -100,6 +100,8 @@ def process_input(line):
 def main():
 	for line in sys.stdin:
 		process_input(line)
+		sys.stdout.flush()
+		sys.stderr.flush()
 
 if __name__ == "__main__":
 	main()
